@@ -3,6 +3,43 @@
 #include <time.h>
 #include <stdlib.h>
 
+//TODO LOG日志实现
+void log()
+{
+	FILE *file;
+	if ((file = fopen("LOG.txt", "r")) == NULL)
+    {
+		fclose(file);
+        if ((file = fopen("LOG.txt", "ab+")) == NULL)
+		{
+			printf("Error：无法写入日志文件！");
+			exit(0);
+		}
+		fprintf(file,"--------------------程序日志--------------------\n");
+        fclose(file);
+		return ;
+    }
+	int year,month,day,hour,min,sec;
+	time_t a;
+	struct tm t;
+	a = time(NULL);
+	localtime_s(&t, &a);
+	year = t.tm_year + 1900;
+	month = t.tm_mon + 1;
+	day = t.tm_mday;
+	hour = t.tm_hour;
+	min = t.tm_min;
+	sec = t.tm_sec;
+	
+	if ((file = fopen("LOG.txt", "ab+")) == NULL)
+	{
+		printf("Error：无法写入日志文件！");
+		exit(0);
+	}
+	fprintf(file,"时间：%d/%02d/%02d %02d:%02d:%02d",year,month,day,hour,min,sec);
+    fclose(file);
+}
+
 // 这个函数专门用来输出一级菜单
 void outputmenu()
 {
@@ -162,6 +199,7 @@ char func0()
 	return '1';
 }
 
+//TODO添加卡
 // 用来实现添加卡的功能，将其保存在链表中
 // 函数的返回类型为cardlist，是因为函数的形参并不能反过来改变实参，因此需要将开卡后的新的链表汇总信息返回给main函数
 cardlist func1(card *p, cardlist l)
@@ -272,10 +310,23 @@ cardlist func1(card *p, cardlist l)
 	l.count++;
 	// 将开卡后的信息写入文件
 	spec2(l);
+	//写入LOG日志
+	log();
+	FILE *file;
+    if ((file = fopen("LOG.txt", "ab+")) == NULL)
+    {
+        printf("Error：无法写入日志文件！");
+        exit(0);
+    }
+    fprintf(file," 成功添加了一位用户：");
+	fputs(id,file);
+	fprintf(file,"，该用户充值了开卡金额%.2f元\n",charge);
+    fclose(file);
 	// 将开卡后的新的链表汇总信息返回给main函数
 	return l;
 }
 
+//TODO查询卡
 //用来实现查询卡的功能
 void func2(cardlist l)
 {
@@ -319,6 +370,16 @@ void func2(cardlist l)
 				printf("注销时间：");
 				printf("%04d/%02d/%02d %02d:%02d:%02d\n",p->endtime.year,p->endtime.month,p->endtime.day,p->endtime.hour,p->endtime.min,p->endtime.sec);
 			}
+			//写入日志文件
+			FILE *file;
+    		if ((file = fopen("LOG.txt", "ab+")) == NULL)
+			{
+				printf("Error：无法写入日志文件！");
+				exit(0);
+			}
+    		log();
+    		fprintf(file," 管理员进行了一次查询卡操作，被查询的卡号为：%s\n",id);
+    		fclose(file);
 			return ;
 		}
 		p=p->next;
@@ -352,6 +413,11 @@ void func5(cardlist l)
 		}
 		if (k==0)
 		{
+			if (p->status==2)
+			{
+				printf("充值失败！该卡已注销！\n");
+				return ;
+			}
 			//如果卡号存在，开始进行充值操作
 			printf("该卡累计消费金额为（RMB）：%.2f\n",p->totaluse);
 			printf("该卡剩余余额为（RMB）：%.2f\n",p->balance);
@@ -362,6 +428,16 @@ void func5(cardlist l)
 			printf("充值成功！该卡当前余额为（RMB）：%.2f\n",p->balance);
 			//充值完成则存入文件
 			spec2(l);
+			//写入日志文件
+			FILE *file;
+    		if ((file = fopen("LOG.txt", "ab+")) == NULL)
+			{
+				printf("Error：无法写入日志文件！");
+				exit(0);
+			}
+    		log();
+    		fprintf(file," 用户%s进行了一次充值卡操作，充值金额为：%.2f元，该卡余额为：%.2f元\n",id,charge,p->balance);
+    		fclose(file);
 			return ;
 		}
 		p=p->next;
@@ -398,6 +474,16 @@ cardlist dele(cardlist l)
 				spec2(l);
 				free(p);
 				printf("节点删除成功！\n");
+				//写入日志文件
+				FILE *file;
+    			if ((file = fopen("LOG.txt", "ab+")) == NULL)
+				{
+					printf("Error：无法写入日志文件！");
+					exit(0);
+				}
+    			log();
+    			fprintf(file," 管理员彻底删除了一个节点，节点账号为：%s\n",id);
+    			fclose(file);
 				return l;
 			}
 			//如果节点存在，开始进行删除操作
@@ -406,6 +492,16 @@ cardlist dele(cardlist l)
 			spec2(l);
 			free(p);
 			printf("节点删除成功！\n");
+			//写入日志文件
+			FILE *file;
+    		if ((file = fopen("LOG.txt", "ab+")) == NULL)
+			{
+				printf("Error：无法写入日志文件！");
+				exit(0);
+			}
+    		log();
+    		fprintf(file," 管理员彻底删除了一个节点，节点账号为：%s\n",id);
+    		fclose(file);
 			return l;
 		}
 		a=p;
@@ -528,10 +624,446 @@ cardlist insert(cardlist l)
 			l.count++;
 			printf("插入卡成功！\n");
 			spec2(l);
+			//写入日志文件
+			FILE *file;
+    		if ((file = fopen("LOG.txt", "ab+")) == NULL)
+			{
+				printf("Error：无法写入日志文件！");
+				exit(0);
+			}
+    		log();
+    		fprintf(file," 管理员在节点%s后面添加了一位新节点%s\n",idd,id);
+    		fclose(file);
 			return l;
 		}
 		p=p->next;
 	}
 	printf("该节点不存在！\n");
 	return l;
+}
+
+//TODO计费规则
+struct Chargerule 
+{
+	//每小时基本费用
+	double hourcharge;
+	//特殊折扣
+	double count;
+};
+
+//TODO上机
+void func3(cardlist l)
+{
+	struct Chargerule chargerule;
+	chargerule.count=0.9;
+	chargerule.hourcharge=6.00;
+	char id[40],password[40];
+	int i,j,k,h;
+	double hour;
+	card *p;
+	for (i=0;i<40;i++)
+	{
+		id[i]='\0';
+		password[i]='\0';
+	}
+	printf("----------上机----------\n");
+	printf("请输入你的卡号：");
+	gets(id);
+	//查找卡号
+	p=l.head;
+	for (i=1;i<l.count;i++)
+	{
+		j=0;
+		for (k=0;k<40;k++)
+		{
+			if (p->id[k] != id[k])
+				j++;
+		}
+		if (j==0)
+		{
+			printf("请输入密码：");
+			gets(password);
+			for (k=0;k<40;k++)
+			{
+				if (p->password[k]!=password[k])
+					j++;
+			}
+			if (j!=0)
+			{
+				printf("密码输入错误！上机失败\n");
+				return ;
+			}
+			if (p->status!=0)
+			{
+				printf("上机失败！");
+				if (p->status==1){
+					printf("该卡正在上机！\n");
+				}
+				else if(p->status==2){
+					printf("该卡已注销！\n");
+				}
+				return ;
+			}
+			printf("你想上机多少小时（请输入整数，不然不到一小时的部分按一小时算）：");
+			scanf("%lf",&hour);
+			getchar();
+			if (hour<=0)
+			{
+				printf("上机失败！上机时间必须大于零！\n");
+				return ;
+			}
+			if (hour-(int)hour!=0)
+			{
+				h=(int)hour+1;
+			}
+			else {
+				h=(int)hour;
+			}
+			
+			if (p->balance-h*chargerule.hourcharge<0)
+			{
+				printf("余额不足！请先去充钱！\n");
+				return ;
+			}
+			else{
+				p->balance-=h*chargerule.hourcharge;
+				p->status=1;
+				p->totaluse+=h*chargerule.hourcharge;
+				time_t a;
+				struct tm t;
+				a = time(NULL);
+				localtime_s(&t, &a);
+				p->lasttime.year = t.tm_year + 1900;
+				p->lasttime.month = t.tm_mon + 1;
+				p->lasttime.day = t.tm_mday;
+				p->lasttime.hour = t.tm_hour;
+				p->lasttime.min = t.tm_min;
+				p->lasttime.sec = t.tm_sec;
+				p->endtime = p->lasttime;
+				p->count++;
+				spec2(l);
+				printf("上机成功！请记得及时下机！\n");
+				//写入日志文件
+				FILE *file;
+    			if ((file = fopen("LOG.txt", "ab+")) == NULL)
+				{
+					printf("Error：无法写入日志文件！");
+					exit(0);
+				}
+    			log();
+    			fprintf(file," 用户%s进行了一次上机操作，上机时限为%d小时，该卡余额为：%.2f元\n",id,h,p->balance);
+    			fclose(file);
+				return ;
+			}
+			return ;
+		}
+		p=p->next;
+	}
+	printf("卡号输入错误，未查询到该账号！\n");
+	return ;
+}
+
+//TODO下机
+void func4(cardlist l)
+{
+	char id[40],password[40];
+	int i,j,k,h;
+	double hour;
+	card *p;
+	for (i=0;i<40;i++)
+	{
+		id[i]='\0';
+		password[i]='\0';
+	}
+	printf("----------下机----------\n");
+	printf("请输入你的卡号：");
+	gets(id);
+	//查找卡号
+	p=l.head;
+	for (i=1;i<l.count;i++)
+	{
+		j=0;
+		for (k=0;k<40;k++)
+		{
+			if (p->id[k] != id[k])
+				j++;
+		}
+		if (j==0)
+		{
+			printf("请输入密码：");
+			gets(password);
+			for (k=0;k<40;k++)
+			{
+				if (p->password[k]!=password[k])
+					j++;
+			}
+			if (j!=0)
+			{
+				printf("密码输入错误！下机失败\n");
+				return ;
+			}
+			else{
+				if (p->status!=1){
+					printf("下机失败！");
+					if (p->status==0){
+						printf("该卡未上机！\n");
+					}
+					else if (p->status==2){
+						printf("该卡已注销！\n");
+					}
+					return ;
+				}
+				p->status=0;
+				printf("该卡已成功下机！\n");
+				printf("该卡上机时间：");
+				printf("%04d/%02d/%02d %02d:%02d:%02d\n",p->lasttime.year,p->lasttime.month,p->lasttime.day,p->lasttime.hour,p->lasttime.min,p->lasttime.sec);
+				printf("该卡下机时间：");
+				time_t a;
+				struct tm t;
+				a = time(NULL);
+				localtime_s(&t, &a);
+				p->lasttime.year = t.tm_year + 1900;
+				p->lasttime.month = t.tm_mon + 1;
+				p->lasttime.day = t.tm_mday;
+				p->lasttime.hour = t.tm_hour;
+				p->lasttime.min = t.tm_min;
+				p->lasttime.sec = t.tm_sec;
+				p->endtime = p->lasttime;
+				printf("%04d/%02d/%02d %02d:%02d:%02d\n",p->lasttime.year,p->lasttime.month,p->lasttime.day,p->lasttime.hour,p->lasttime.min,p->lasttime.sec);
+				printf("欢迎下次再来！\n");
+				spec2(l);
+				//写入日志文件
+				FILE *file;
+    			if ((file = fopen("LOG.txt", "ab+")) == NULL)
+				{
+					printf("Error：无法写入日志文件！");
+					exit(0);
+				}
+    			log();
+    			fprintf(file," 用户%s进行了一次下机操作\n",id);
+    			fclose(file);
+				return ;
+			}
+			return ;
+		}
+		p=p->next;
+	}
+	printf("卡号输入错误，未查询到该账号！\n");
+	return ;
+}
+
+//TODO退费
+void func6(cardlist l)
+{
+	char id[40],password[40];
+	int i,j,k,h;
+	double fee;
+	card *p;
+	for (i=0;i<40;i++)
+	{
+		id[i]='\0';
+		password[i]='\0';
+	}
+	printf("----------退费----------\n");
+	printf("请输入你的卡号：");
+	gets(id);
+	//查找卡号
+	p=l.head;
+	for (i=1;i<l.count;i++)
+	{
+		j=0;
+		for (k=0;k<40;k++)
+		{
+			if (p->id[k] != id[k])
+				j++;
+		}
+		if (j==0)
+		{
+			printf("请输入密码：");
+			gets(password);
+			for (k=0;k<40;k++)
+			{
+				if (p->password[k]!=password[k])
+					j++;
+			}
+			if (j!=0)
+			{
+				printf("密码输入错误！退费失败\n");
+				return ;
+			}
+			else{
+				if (p->status!=0){
+					printf("退费失败！");
+					if (p->status==1){
+						printf("该卡正在上机！\n");
+					}
+					else if (p->status==2){
+						printf("该卡已注销！\n");
+					}
+					return ;
+				}
+				printf("该卡剩余金额为（RMB）：%.2f\n",p->balance);
+				printf("请输入退款金额（RMB）：");
+				scanf("%lf",&fee);
+				getchar();
+				if (p->balance-fee<0){
+					printf("退费失败！卡里余额不足！\n");
+					return ;
+				}
+				p->balance-=fee;
+				printf("退费成功！该卡剩余余额%.2f元\n",p->balance);
+				spec2(l);
+				//写入日志文件
+				FILE *file;
+    			if ((file = fopen("LOG.txt", "ab+")) == NULL)
+				{
+					printf("Error：无法写入日志文件！");
+					exit(0);
+				}
+    			log();
+    			fprintf(file," 用户%s进行了一次退费操作，退款金额为%.2f元，卡里剩余余额为%.2f元\n",id,fee,p->balance);
+    			fclose(file);
+				return ;
+			}
+			return ;
+		}
+		p=p->next;
+	}
+	printf("卡号输入错误，未查询到该账号！\n");
+	return ;
+}
+
+//TODO注销卡
+void func8(cardlist l)
+{
+	char id[40],password[40];
+	int i,j,k,h;
+	card *p;
+	for (i=0;i<40;i++)
+	{
+		id[i]='\0';
+		password[i]='\0';
+	}
+	printf("----------注销卡----------\n");
+	printf("请输入你的卡号：");
+	gets(id);
+	//查找卡号
+	p=l.head;
+	for (i=1;i<l.count;i++)
+	{
+		j=0;
+		for (k=0;k<40;k++)
+		{
+			if (p->id[k] != id[k])
+				j++;
+		}
+		if (j==0)
+		{
+			printf("请输入密码：");
+			gets(password);
+			for (k=0;k<40;k++)
+			{
+				if (p->password[k]!=password[k])
+					j++;
+			}
+			if (j!=0)
+			{
+				printf("密码输入错误！注销失败\n");
+				return ;
+			}
+			else{
+				if (p->status!=0){
+					printf("注销失败！");
+					if (p->status==1){
+						printf("该卡正在上机！\n");
+					}
+					else if (p->status==2){
+						printf("该卡已注销！\n");
+					}
+					return ;
+				}
+				if (p->balance>0){
+					printf("注销失败！该卡还剩余额%.2f元未使用！\n",p->balance);
+					printf("请先去将卡里所有余额退费！\n");
+					return ;
+				}
+				p->del=1;
+				p->status=2;
+				time_t a;
+				struct tm t;
+				a = time(NULL);
+				localtime_s(&t, &a);
+				p->endtime.year = t.tm_year + 1900;
+				p->endtime.month = t.tm_mon + 1;
+				p->endtime.day = t.tm_mday;
+				p->endtime.hour = t.tm_hour;
+				p->endtime.min = t.tm_min;
+				p->endtime.sec = t.tm_sec;
+				printf("该卡已成功注销！\n");
+				printf("如果想要重新注册该卡ID，请管理员从链表中彻底清除该节点！\n");
+				spec2(l);
+				//写入日志文件
+				FILE *file;
+    			if ((file = fopen("LOG.txt", "ab+")) == NULL)
+				{
+					printf("Error：无法写入日志文件！");
+					exit(0);
+				}
+    			log();
+    			fprintf(file," 用户%s注销了自己的账号！\n",id);
+    			fclose(file);
+				return ;
+			}
+			return ;
+		}
+		p=p->next;
+	}
+	printf("卡号输入错误，未查询到该账号！\n");
+	return ;
+}
+
+//TODO查询统计·
+void func7(cardlist l)
+{
+	card *p;
+	int i,j=0,del=0;
+	double all=0;
+	p=l.head;
+	printf("----------查询统计----------\n");
+	printf("总共查询到%d张卡\n\n",l.count-1);
+	for (i=1;i<l.count;i++){
+		printf("第%d张卡\n",i);
+		printf("卡号：");
+		puts(p->id);
+		printf("开卡时间：");
+		printf("%04d/%02d/%02d %02d:%02d:%02d\n",p->starttime.year,p->starttime.month,p->starttime.day,p->starttime.hour,p->starttime.min,p->starttime.sec);
+		printf("上机状态（0/1/2）：%d\n",p->status);
+		printf("上一次使用时间：");
+		printf("%04d/%02d/%02d %02d:%02d:%02d\n",p->lasttime.year,p->lasttime.month,p->lasttime.day,p->lasttime.hour,p->lasttime.min,p->lasttime.sec);
+		printf("上机次数：%d\n",p->count);
+		printf("累计消费金额（RMB）：%.2f\n",p->totaluse);
+		printf("卡里余额（RMB）：%.2f\n",p->balance);
+		printf("是否注销（0/1）：%d\n",p->del);
+		if (p->del==1){
+			printf("注销时间：");
+			printf("%04d/%02d/%02d %02d:%02d:%02d\n",p->endtime.year,p->endtime.month,p->endtime.day,p->endtime.hour,p->endtime.min,p->endtime.sec);
+		}
+		printf("\n");
+		j+=p->count;
+		all+=p->totaluse;
+		del+=p->del;
+		p=p->next;
+	}
+	printf("这%d位用户总共上机%d次，网吧总收入为%.2f元，已注销%d位用户\n",l.count-1,j,all,del);
+	printf("查询完毕！\n");
+	//写入日志文件
+	FILE *file;
+    if ((file = fopen("LOG.txt", "ab+")) == NULL)
+	{
+		printf("Error：无法写入日志文件！");
+		exit(0);
+	}
+    log();
+    fprintf(file," 管理员进行了一次查询统计操作\n");
+    fclose(file);
 }
