@@ -5,6 +5,7 @@ int main()
     int x,charge=0;
     long int hash=7,key;
     char n, i = '1', t[20], m;
+    FILE *file;
 
     // 创建一个card型指针，用来在链表上移动，精确操作链表每个节点
     card *member;
@@ -18,6 +19,17 @@ int main()
 
     // 让指针指向链表第一个节点，链表创建完成
     member = memberlist.head;
+    if ((file = fopen("LOG.txt", "r")) == NULL)
+    {
+		fclose(file);
+        if ((file = fopen("LOG.txt", "ab+")) == NULL)
+		{
+			printf("Error：无法写入日志文件！");
+			exit(0);
+		}
+		fprintf(file,"--------------------程序日志--------------------\n");
+        fclose(file);
+    }
 
     // TODO读取文件
     // 初始化链表信息，将上一次程序运行的数据读取到当前程序
@@ -27,6 +39,17 @@ int main()
         // 检测是否存在能够读取成员信息的文件
         printf("无法查询到以前的成员信息，该文件不存在或者已经被损坏！\n");
         printf("请重新录入以往成员信息！\n");
+        if ((file = fopen("LOG.txt", "ab+")) == NULL)
+	    {
+		    printf("Error：无法写入日志文件！");
+		    exit(0);
+	    }
+	    fprintf(file,"\n程序启动时，检测到以往成员信息不存在！（");
+        fclose(file);
+        log();
+        file = fopen("LOG.txt", "ab+");
+        fprintf(file,"）\n");
+        fclose(file);
         fclose(p);
     }
     else
@@ -44,6 +67,17 @@ int main()
 		    printf("Error：哈希文件丢失，无法判断成员信息是否被篡改！\n");
             printf("请重新录入以往成员信息！\n");
 		    fclose(p);
+            if ((file = fopen("LOG.txt", "ab+")) == NULL)
+	        {
+		        printf("Error：无法写入日志文件！");
+		        exit(0);
+	        }
+	        fprintf(file,"\n程序启动时，检测到哈希文件丢失，并清除了其它成员信息！（");
+            fclose(file);
+            log();
+            file = fopen("LOG.txt", "ab+");
+            fprintf(file,"）\n");
+            fclose(file);
             charge=0;
 	    }
         else
@@ -65,6 +99,17 @@ int main()
                 printf("Error：哈希值不匹配！数据文件被篡改！无法读取成员信息！\n");
                 printf("请重新录入以往成员信息！\n");
             }
+            if ((file = fopen("LOG.txt", "ab+")) == NULL)
+	        {
+		        printf("Error：无法写入日志文件！");
+		        exit(0);
+	        }
+	        fprintf(file,"\n程序启动时，检测到数据文件被篡改，并清除了其它成员信息！（");
+            fclose(file);
+            log();
+            file = fopen("LOG.txt", "ab+");
+            fprintf(file,"）\n");
+            fclose(file);
         }
         else
         {
@@ -131,6 +176,17 @@ int main()
                 member=member->next;
             }
             fclose(p);
+            if ((file = fopen("LOG.txt", "ab+")) == NULL)
+	        {
+		        printf("Error：无法写入日志文件！");
+		        exit(0);
+	        }
+	        fprintf(file,"\n--------------------程序正常启动（");
+            fclose(file);
+            log();
+            file = fopen("LOG.txt", "ab+");
+            fprintf(file,"）----------\n");
+            fclose(file);
         }
     }
     //读取文件操作完成，指针指向头结点，开始进入菜单界面
@@ -162,29 +218,47 @@ int main()
             func2(memberlist);
             break;
         case '3':
+            func3(memberlist);
             break;
         case '4':
+            func4(memberlist);
             break;
         case '5':
             func5(memberlist);
             break;
         case '6':
+            func6(memberlist);
             break;
         case '7':
+            func7(memberlist);
             break;
         case 'r':
             remove("member.xls");
             remove("member.txt");
+            remove("hash.txt");
             printf("已清除所有数据！\n");
-            exit(0);
+            //写入日志文件
+            if ((file = fopen("LOG.txt", "ab+")) == NULL)
+	        {
+		        printf("Error：无法写入日志文件！");
+		        exit(0);
+	        }
+            log();
+            fprintf(file," 管理员清空了所有的成员数据！程序已终止！\n");
+            fclose(file);
+            return 0;
             break;
         case '8':
+            func8(memberlist);
             break;
         case 'd':
             memberlist=dele(memberlist);
             break;
         case 'i':
             memberlist=insert(memberlist);
+            break;
+        case 'l':
+            log();
             break;
         default:
             printf("Error：无法识别输入信息，请重新操作！\n");
@@ -193,5 +267,17 @@ int main()
     //退出程序时，释放链表的内存
     member=memberlist.head;
     free(member);
+    //写入日志文件
+    if ((file = fopen("LOG.txt", "ab+")) == NULL)
+	{
+		printf("Error：无法写入日志文件！");
+		exit(0);
+	}
+	fprintf(file,"--------------------程序正常退出（");
+    fclose(file);
+    log();
+    file = fopen("LOG.txt", "ab+");
+    fprintf(file,"）----------\n");
+    fclose(file);
     return 0;
 }
